@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,7 @@ interface UploadedFile {
     confidence: number;
     details: string;
   };
+  ocrJson?: any;
 }
 
 export const CertificateUpload = () => {
@@ -23,7 +25,7 @@ export const CertificateUpload = () => {
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFiles = (fileList: FileList) => {
+  const handleFiles = async (fileList: FileList) => {
     const newFiles: UploadedFile[] = Array.from(fileList).map(file => ({
       id: Math.random().toString(36).substr(2, 9),
       name: file.name,
@@ -31,29 +33,57 @@ export const CertificateUpload = () => {
       type: file.type,
       status: "pending"
     }));
-    
+
     setFiles(prev => [...prev, ...newFiles]);
-    
-    // Simulate verification process
-    newFiles.forEach(file => {
-      setTimeout(() => {
-        setFiles(prev => prev.map(f => 
-          f.id === file.id 
-            ? { 
-                ...f, 
-                status: Math.random() > 0.3 ? "verified" : "rejected",
-                verificationResult: {
-                  isAuthentic: Math.random() > 0.3,
-                  confidence: Math.floor(Math.random() * 30) + 70,
-                  details: Math.random() > 0.3 
-                    ? "Certificate verified against government database" 
-                    : "Certificate could not be verified - potential forgery detected"
+
+    // Call backend for each file
+    await Promise.all(
+      Array.from(fileList).map(async (file, idx) => {
+        const localId = newFiles[idx].id;
+        const formData = new FormData();
+        formData.append("file", file);
+
+        // Optional demo fields to simulate OCR extraction matching on-chain metadata
+        // formData.append("rollNumber", "JH2021CS001");
+
+        try {
+          const res = await axios.post(
+            `${import.meta.env.VITE_API_BASE || "http://localhost:5000"}/api/certificates/upload`,
+            formData,
+            { headers: { "Content-Type": "multipart/form-data" } }
+          );
+          const { verification, ocr } = res.data;
+          setFiles(prev => prev.map(f =>
+            f.id === localId
+              ? {
+                  ...f,
+                  status: verification.isAuthentic ? "verified" : "rejected",
+                  verificationResult: {
+                    isAuthentic: verification.isAuthentic,
+                    confidence: Math.round((verification.confidence || 0.9) * 100),
+                    details: verification.details
+                  },
+                  ocrJson: ocr
                 }
-              }
-            : f
-        ));
-      }, 2000 + Math.random() * 3000);
-    });
+              : f
+          ));
+        } catch (e) {
+          setFiles(prev => prev.map(f =>
+            f.id === localId
+              ? {
+                  ...f,
+                  status: "rejected",
+                  verificationResult: {
+                    isAuthentic: false,
+                    confidence: 0,
+                    details: "Verification service error"
+                  }
+                }
+              : f
+          ));
+        }
+      })
+    );
   };
 
   const handleDrag = (e: React.DragEvent) => {
@@ -193,6 +223,11 @@ export const CertificateUpload = () => {
                         <p className="text-sm text-muted-foreground mt-1">
                           Confidence: {file.verificationResult.confidence}% • {file.verificationResult.details}
                         </p>
+                      )}
+                      {file.ocrJson && (
+                        <pre className="mt-2 text-xs bg-muted p-2 rounded max-w-md overflow-x-auto">
+{JSON.stringify(file.ocrJson, null, 2)}
+                        </pre>
                       )}
                     </div>
                   </div>
