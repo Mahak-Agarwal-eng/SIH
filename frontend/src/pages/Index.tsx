@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { AuthForm } from "@/components/AuthForm";
 import { Dashboard } from "@/components/Dashboard";
 import { CertificateUpload } from "@/components/CertificateUpload";
+import { AdminPortal } from "@/components/AdminPortal";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
@@ -48,6 +49,8 @@ const Index = () => {
     return <AuthForm onLogin={handleLogin} onSignup={handleSignup} />;
   }
 
+  const isAdmin = userEmail.toLowerCase() === "xyz@gov.ac.in";
+
   return (
     <div className="min-h-screen bg-background">
       <Header 
@@ -57,21 +60,44 @@ const Index = () => {
       />
       
       <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="dashboard" className="w-full">
+        <Tabs defaultValue={isAdmin ? "admin" : "dashboard"} className="w-full">
           <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-8">
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="upload">Upload Certificate</TabsTrigger>
+            {isAdmin ? (
+              <>
+                <TabsTrigger value="admin">Admin</TabsTrigger>
+                <TabsTrigger value="upload">Upload Certificate</TabsTrigger>
+              </>
+            ) : (
+              <>
+                <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+                <TabsTrigger value="upload">Upload Certificate</TabsTrigger>
+              </>
+            )}
           </TabsList>
           
-          <TabsContent value="dashboard" className="space-y-6">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-foreground mb-2">Verification Dashboard</h1>
-              <p className="text-muted-foreground">
-                Monitor certificate verification activity and system status
-              </p>
-            </div>
-            <Dashboard />
-          </TabsContent>
+          {!isAdmin && (
+            <TabsContent value="dashboard" className="space-y-6">
+              <div className="text-center mb-8">
+                <h1 className="text-3xl font-bold text-foreground mb-2">Verification Dashboard</h1>
+                <p className="text-muted-foreground">
+                  Monitor certificate verification activity and system status
+                </p>
+              </div>
+              <Dashboard />
+            </TabsContent>
+          )}
+
+          {isAdmin && (
+            <TabsContent value="admin" className="space-y-6">
+              <div className="text-center mb-8">
+                <h1 className="text-3xl font-bold text-foreground mb-2">Admin Portal</h1>
+                <p className="text-muted-foreground">
+                  Add pre-verified certificates to the database
+                </p>
+              </div>
+              <AdminPortal />
+            </TabsContent>
+          )}
           
           <TabsContent value="upload" className="space-y-6">
             <div className="text-center mb-8">
