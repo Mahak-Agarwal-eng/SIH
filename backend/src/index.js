@@ -4,6 +4,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const certificateRoutes = require('./routes/certificate.routes');
+const adminRoutes = require('./routes/admin.routes');
 
 const app = express();
 
@@ -14,6 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/certificates', certificateRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Database connection
 mongoose.connect(process.env.MONGODB_URI, {
