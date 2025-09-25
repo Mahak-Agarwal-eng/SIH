@@ -12,28 +12,75 @@ const Index = () => {
   const [userEmail, setUserEmail] = useState("");
   const { toast } = useToast();
 
-  const handleLogin = (email: string, password: string) => {
-    // Simulate authentication
-    setTimeout(() => {
+  const handleLogin = async (email: string, password: string) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Login failed');
+      }
+
+      const data = await response.json();
       setIsAuthenticated(true);
       setUserEmail(email);
       toast({
         title: "Authentication Successful",
         description: "Welcome to the Certificate Verification System",
       });
-    }, 1000);
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: "Login Failed",
+        description: error instanceof Error ? error.message : "Failed to login",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleSignup = (email: string, password: string) => {
-    // Simulate signup
-    setTimeout(() => {
+  const handleSignup = async (email: string, password: string) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: email.split('@')[0],
+          email: email,
+          password: password
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Signup failed');
+      }
+
+      const data = await response.json();
       setIsAuthenticated(true);
       setUserEmail(email);
       toast({
         title: "Account Created",
         description: "Your government account has been registered successfully",
       });
-    }, 1000);
+    } catch (error) {
+      console.error('Signup error:', error);
+      toast({
+        title: "Signup Failed",
+        description: error instanceof Error ? error.message : "Failed to create account",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleLogout = () => {
