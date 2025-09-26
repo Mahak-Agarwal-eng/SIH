@@ -3,7 +3,7 @@ const Web3 = require('web3');
 // Ganache configuration
 const GANACHE_URL = process.env.GANACHE_URL || 'http://localhost:7545';
 
-// Contract ABI for CertificateRegistry
+// Contract ABI for CertificateRegistry (from Truffle build)
 const CONTRACT_ABI = [
     {
         "inputs": [
@@ -85,7 +85,7 @@ async function storeCertificateOnChain(hashHex, ocrData) {
             }
         }
         
-        // Convert hash to bytes32
+        // Convert hash to bytes32 (pad with zeros if needed)
         const hashBytes32 = '0x' + hashHex.padStart(64, '0');
         
         // Store certificate data on blockchain

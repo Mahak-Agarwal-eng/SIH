@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.5.0;
 
 contract CertificateRegistry {
     struct Certificate {
@@ -25,16 +25,16 @@ contract CertificateRegistry {
         _;
     }
     
-    constructor() {
+    constructor() public {
         admin = msg.sender;
     }
     
     function storeCertificate(
         bytes32 _hash,
-        string memory _studentName,
-        string memory _rollNumber,
-        string memory _course,
-        string memory _institution,
+        string calldata _studentName,
+        string calldata _rollNumber,
+        string calldata _course,
+        string calldata _institution,
         uint256 _yearOfPassing
     ) external onlyAdmin {
         require(certificates[_hash].timestamp == 0, "Certificate already exists");
@@ -46,7 +46,7 @@ contract CertificateRegistry {
             institution: _institution,
             yearOfPassing: _yearOfPassing,
             documentHash: _hash,
-            timestamp: block.timestamp,
+            timestamp: now,
             isActive: true
         });
         
@@ -55,7 +55,7 @@ contract CertificateRegistry {
     }
     
     function verifyCertificate(bytes32 _hash) external view returns (bool) {
-        return certificates[_hash].isActive;
+        return certificates[_hash].isActive && certificates[_hash].timestamp > 0;
     }
     
     function getCertificate(bytes32 _hash) external view returns (
@@ -68,7 +68,7 @@ contract CertificateRegistry {
         uint256 timestamp,
         bool isActive
     ) {
-        Certificate memory cert = certificates[_hash];
+        Certificate storage cert = certificates[_hash];
         return (
             cert.studentName,
             cert.rollNumber,
@@ -88,5 +88,9 @@ contract CertificateRegistry {
     
     function getTotalCertificates() external view returns (uint256) {
         return certificateHashes.length;
+    }
+    
+    function getAllCertificateHashes() external view returns (bytes32[] memory) {
+        return certificateHashes;
     }
 }
