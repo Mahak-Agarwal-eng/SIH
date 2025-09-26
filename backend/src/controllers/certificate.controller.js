@@ -1,6 +1,8 @@
 const Certificate = require('../models/certificate');
 const multer = require('multer');
 const crypto = require('crypto');
+const { enhancedOcrExtract } = require('../services/ocr.service');
+const { verifyCertificateFromChain } = require('../services/ganache.service');
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -80,28 +82,29 @@ const verifyCertificate = [
                 .update(req.file.buffer)
                 .digest('hex');
 
-            // Find certificate by hash in MongoDB
-            const certificate = await Certificate.findOne({ certificateHash: uploadedHash });
+            // Extract OCR data from uploaded file
+            const uploadedOcrData = await enhancedOcrExtract(req.file.buffer, req.file.mimetype);
 
-            if (!certificate) {
-                return res.status(404).json({
-                    isVerified: false,
-                    message: 'Certificate not found on blockchain'
-                });
-            }
-
-            // Simulate blockchain verification
-            const verification = await simulateBlockchainVerification(uploadedHash);
+            // Verify against blockchain
+            const verification = await verifyCertificateFromChain(uploadedHash, uploadedOcrData);
 
             return res.status(200).json({
-                isVerified: true,
-                message: 'Certificate verified on blockchain',
-                blockchainData: certificate.blockchainData,
                 verification,
-                certificate
+                uploadedOcrData,
+                certificateHash: uploadedHash
             });
         } catch (error) {
-            res.status(500).json({ message: error.message });
+            console.error('Verification error:', error);
+            return res.status(500).json({ 
+                message: error.message,
+                verification: {
+                    isAuthentic: false,
+                    confidence: 0.0,
+                    details: 'Verification service error',
+                    forgedFields: [],
+                    blockchainData: null
+                }
+            });
         }
     }
 ];
