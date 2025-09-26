@@ -16,6 +16,8 @@ interface UploadedFile {
     isAuthentic: boolean;
     confidence: number;
     details: string;
+    forgedFields?: string[];
+    blockchainData?: any;
   };
   ocrJson?: any;
 }
@@ -52,7 +54,7 @@ export const CertificateUpload = () => {
             formData,
             { headers: { "Content-Type": "multipart/form-data" } }
           );
-          const { verification, ocr } = res.data;
+          const { verification, uploadedOcrData } = res.data;
           setFiles(prev => prev.map(f =>
             f.id === localId
               ? {
@@ -61,9 +63,11 @@ export const CertificateUpload = () => {
                   verificationResult: {
                     isAuthentic: verification.isAuthentic,
                     confidence: Math.round((verification.confidence || 0.9) * 100),
-                    details: verification.details
+                    details: verification.details,
+                    forgedFields: verification.forgedFields || [],
+                    blockchainData: verification.blockchainData
                   },
-                  ocrJson: ocr
+                  ocrJson: uploadedOcrData
                 }
               : f
           ));
@@ -220,9 +224,21 @@ export const CertificateUpload = () => {
                       <p className="font-medium">{file.name}</p>
                       <p className="text-sm text-muted-foreground">{formatFileSize(file.size)}</p>
                       {file.verificationResult && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Confidence: {file.verificationResult.confidence}% • {file.verificationResult.details}
-                        </p>
+                        <div className="mt-1 space-y-1">
+                          <p className="text-sm text-muted-foreground">
+                            Confidence: {file.verificationResult.confidence}% • {file.verificationResult.details}
+                          </p>
+                          {file.verificationResult.forgedFields && file.verificationResult.forgedFields.length > 0 && (
+                            <div className="text-sm text-red-600">
+                              <strong>Forged Fields:</strong> {file.verificationResult.forgedFields.join(', ')}
+                            </div>
+                          )}
+                          {file.verificationResult.blockchainData && (
+                            <div className="text-xs text-blue-600">
+                              <strong>Blockchain Data:</strong> Stored on {new Date(file.verificationResult.blockchainData.timestamp * 1000).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
                       )}
                       {file.ocrJson && (
                         <pre className="mt-2 text-xs bg-muted p-2 rounded max-w-md overflow-x-auto">

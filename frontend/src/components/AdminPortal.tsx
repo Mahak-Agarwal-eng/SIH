@@ -30,11 +30,12 @@ export const AdminPortal = () => {
     form.append("file", file);
     try {
       setLoading(true);
-      const res = await axios.post(`${import.meta.env.VITE_API_BASE || "http://localhost:5000"}/api/admin/upload`, form, {
+          const res = await axios.post(`${import.meta.env.VITE_API_BASE || "http://localhost:5000"}/api/admin/upload`, form, {
         headers: { "Content-Type": "multipart/form-data" }
       });
       setAdded(true);
       setTxHash(res.data?.txHash || "");
+      console.log('Certificate stored:', res.data);
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || "Upload failed");
     } finally {
